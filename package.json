@@ -30,5 +30,6 @@
   "bugs": {
     "url": "https://github.com/TheCollinCashio/Rib-Store/issues"
   },
-  "homepage": "https://github.com/TheCollinCashio/Rib-Store#readme"
+  "homepage": "https://github.com/TheCollinCashio/Rib-Store#readme",
+  "devDependencies": {}
 }

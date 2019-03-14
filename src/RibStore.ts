@@ -1,5 +1,6 @@
 import RibServer, { SocketIORib } from 'rib-server'
 
+//  need to work on ClientStore...I believe that server store is done
 export class ClientStore {
     private data = new Map<string, any>()
     private functionMap = new Map<string, ((value?: any) => void)[]>()

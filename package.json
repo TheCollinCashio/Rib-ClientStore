@@ -1,6 +1,6 @@
 {
   "name": "rib-store",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A simple store for an integrated backend that also works with frontend libraries such as React, Vue, and Angular.",
   "main": "lib/RibStore.js",
   "types": "lib/RibStore.d.ts",

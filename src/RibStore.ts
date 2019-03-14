@@ -1,3 +1,5 @@
+import RibServer, { SocketIORib } from 'rib-server'
+
 export class ClientStore {
     private data = new Map<string, any>()
     private functionMap = new Map<string, ((value?: any) => void)[]>()
@@ -53,8 +55,11 @@ export class ClientStore {
 export class ServerStore {
     private data = new Map<string, any>()
     private functionMap = new Map<string, ((value?: any) => void)[]>()
-    private ribInstance : Rib
-    private isBound = false
+    private availableSockets = new Map<string, SocketIORib.Socket>()
+    private ribInstance : RibServer
+    private storeName = null
+    private isExposed = false
+    private isPublicStore = true
 
     constructor(obj: object) {
         this.set(obj)
@@ -83,17 +88,15 @@ export class ServerStore {
                     this.unBind(key, addFunc)
                 })
             } 
-            
-            if (this.isBound) {
-                let ioFunction = () => {
-                    //  emit to all
-                }
+        }
 
-                if (functions) {
-                    this.functionMap.set(key, [...functions, ioFunction])
-                } else {
-                    this.functionMap.set(key, [ioFunction])
-                }
+        if (this.isExposed) {
+            if (this.isPublicStore) {
+                this.ribInstance._nameSpace.emit(`RibStore_${this.storeName}`, obj)
+            } else {
+                this.availableSockets.forEach(socket => {
+                    socket.emit(`RibStore_${this.storeName}`, obj)
+                })
             }
         }
 
@@ -110,8 +113,36 @@ export class ServerStore {
         return returnObj
     }
 
-    exposeStore(ribInstance: any) {
-        
+    exposeStore(storeName: string, ribInstance: RibServer, isPublicStore?: boolean) {
+        this.isExposed = true
+        this.storeName = storeName
+        this.isPublicStore = isPublicStore
+        this.ribInstance = ribInstance
+    }
+
+    giveAccess(clients: any[]) {
+        if (this.isPublicStore) {
+            this.ribInstance._nameSpace.on(`RibStoreUpdate_${this.storeName}`, (obj: object) => {
+                this.set(obj)
+            })
+        } else {
+            for (let client of clients) {
+                if (client && client._ribSocketId) {
+                    let socketId = client._ribSocketId
+                    let socket = this.ribInstance._socketMap.get(socketId)
+                    if (socket) {
+                        this.availableSockets.set(socketId, socket)
+                        socket.on('disconnect', () => {
+                            this.availableSockets.delete(socketId)
+                        })
+
+                        socket.on(`RibStoreUpdate_${this.storeName}`, (obj: object) => {
+                            this.set(obj)
+                        })
+                    }
+                }
+            }
+        }
     }
 
     private unBind(key: string, fnToUnbind: (value?: any) => void) {

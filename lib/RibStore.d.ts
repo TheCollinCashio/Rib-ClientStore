@@ -1,4 +1,4 @@
-export declare class ClientStore {
+export default class RibStore {
     private data;
     private functionMap;
     constructor(obj: object);

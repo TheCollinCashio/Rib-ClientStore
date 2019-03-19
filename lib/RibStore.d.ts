@@ -22,5 +22,6 @@ export declare class ServerStore {
     get(obj: object): {};
     exposeStore(storeName: string, ribInstance: RibServer, isPublicStore?: boolean): void;
     giveAccess(client: any): void;
+    private getFullObject;
     private unBind;
 }

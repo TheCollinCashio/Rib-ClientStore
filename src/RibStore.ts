@@ -17,7 +17,7 @@ export class ClientStore {
             this.data.set(key, obj[key])
 
             let functions = this.functionMap.get(key)
-            
+
             if (functions) {
                 functions.forEach(fn => fn({ [key]: obj[key] }))
             }
@@ -41,7 +41,7 @@ export class ClientStore {
         }
     }
 
-    get(obj : object) {
+    get(obj: object) {
         let returnObj = {}
         for (let key in obj) {
             returnObj[key] = this.data.get(key) || obj[key]
@@ -49,7 +49,8 @@ export class ClientStore {
         return returnObj
     }
 
-    bindToServerStore(ribInstance: RibClient, serverStoreName: string){
+    bindToServerStore(ribInstance: RibClient, serverStoreName: string) {
+        ribInstance._socket.emit(`RibStoreRequest_${serverStoreName}`)
         ribInstance._socket.on(`RibStore_${serverStoreName}`, (obj) => {
             this.set(obj)
         })
@@ -65,7 +66,7 @@ export class ServerStore {
     private data = new Map<string, any>()
     private functionMap = new Map<string, ((value?: any) => void)[]>()
     private availableSockets = new Map<string, SocketIORib.Socket>()
-    private ribInstance : RibServer
+    private ribInstance: RibServer
     private storeName = null
     private isExposed = false
     private isPublicStore = true
@@ -81,7 +82,7 @@ export class ServerStore {
             this.data.set(key, obj[key])
 
             let functions = this.functionMap.get(key)
-            
+
             if (functions) {
                 functions.forEach(fn => fn({ [key]: obj[key] }))
             }
@@ -97,7 +98,7 @@ export class ServerStore {
                 unBindFunctions.push(() => {
                     this.unBind(key, addFunc)
                 })
-            } 
+            }
         }
 
         if (this.isExposed) {
@@ -115,7 +116,7 @@ export class ServerStore {
         }
     }
 
-    get(obj : object) {
+    get(obj: object) {
         let returnObj = {}
         for (let key in obj) {
             returnObj[key] = this.data.get(key) || obj[key]
@@ -128,14 +129,19 @@ export class ServerStore {
         this.storeName = storeName
         this.isPublicStore = isPublicStore
         this.ribInstance = ribInstance
-    }
 
-    giveAccess(client: any) {
         if (this.isPublicStore) {
             this.ribInstance._nameSpace.on(`RibStoreUpdate_${this.storeName}`, (obj: object) => {
                 this.set(obj)
             })
-        } else {
+            this.ribInstance._nameSpace.on(`RibStoreRequest_${this.storeName}`, (socket: SocketIO.Socket) => {
+                socket.emit(`RibStore_${this.storeName}`, this.getFullObject())
+            })
+        }
+    }
+
+    giveAccess(client: any) {
+        if (!this.isPublicStore) {
             if (client && client._ribSocketId) {
                 let socketId = client._ribSocketId
                 let socket = this.ribInstance._socketMap.get(socketId)
@@ -148,9 +154,22 @@ export class ServerStore {
                     socket.on(`RibStoreUpdate_${this.storeName}`, (obj: object) => {
                         this.set(obj)
                     })
+
+                    socket.on(`RibStoreRequest_${this.storeName}`, () => {
+                        socket.emit(`RibStore_${this.storeName}`, this.getFullObject())
+                    })
                 }
             }
         }
+    }
+
+    private getFullObject() {
+        let allKeys = [...this.data.keys()]
+        let fullStore = {}
+        for (let key of allKeys) {
+            fullStore[key] = this.data.get(key)
+        }
+        return fullStore
     }
 
     private unBind(key: string, fnToUnbind: (value?: any) => void) {

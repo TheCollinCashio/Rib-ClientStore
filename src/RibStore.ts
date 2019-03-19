@@ -23,6 +23,7 @@ export class ClientStore {
             }
 
             if (addFunc) {
+                addFunc({ [key]: obj[key] })
                 if (functions) {
                     this.functionMap.set(key, [...functions, addFunc])
                 } else {
@@ -86,6 +87,7 @@ export class ServerStore {
             }
 
             if (addFunc) {
+                addFunc({ [key]: obj[key] })
                 if (functions) {
                     this.functionMap.set(key, [...functions, addFunc])
                 } else {

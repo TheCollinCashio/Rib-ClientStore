@@ -1,7 +1,6 @@
 import RibServer, { SocketIORib } from 'rib-server'
 import RibClient from 'rib-client'
 
-//  need to work on ClientStore...I believe that server store is done
 export class ClientStore {
     private data = new Map<string, any>()
     private functionMap = new Map<string, ((value?: any) => void)[]>()
@@ -50,10 +49,10 @@ export class ClientStore {
     }
 
     bindToServerStore(ribInstance: RibClient, serverStoreName: string) {
-        ribInstance._socket.emit(`RibStoreRequest_${serverStoreName}`)
         ribInstance._socket.on(`RibStore_${serverStoreName}`, (obj) => {
             this.set(obj)
         })
+        ribInstance._socket.emit(`RibStoreRequest_${serverStoreName}`)
     }
 
     private unBind(key: string, fnToUnbind: (value?: any) => void) {
@@ -131,9 +130,6 @@ export class ServerStore {
         this.ribInstance = ribInstance
 
         if (this.isPublicStore) {
-            this.ribInstance._nameSpace.on(`RibStoreUpdate_${this.storeName}`, (obj: object) => {
-                this.set(obj)
-            })
             this.ribInstance._nameSpace.on(`RibStoreRequest_${this.storeName}`, (socket: SocketIO.Socket) => {
                 socket.emit(`RibStore_${this.storeName}`, this.getFullObject())
             })
@@ -149,10 +145,6 @@ export class ServerStore {
                     this.availableSockets.set(socketId, socket)
                     socket.on('disconnect', () => {
                         this.availableSockets.delete(socketId)
-                    })
-
-                    socket.on(`RibStoreUpdate_${this.storeName}`, (obj: object) => {
-                        this.set(obj)
                     })
 
                     socket.on(`RibStoreRequest_${this.storeName}`, () => {

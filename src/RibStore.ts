@@ -1,4 +1,5 @@
 import RibServer, { SocketIORib } from 'rib-server'
+import RibClient from 'rib-client'
 
 //  need to work on ClientStore...I believe that server store is done
 export class ClientStore {
@@ -45,6 +46,12 @@ export class ClientStore {
             returnObj[key] = this.data.get(key) || obj[key]
         }
         return returnObj
+    }
+
+    bindToServerStore(ribInstance: RibClient, serverName: string){
+        ribInstance._socket.on(`RibStore_${serverName}`, (obj) => {
+            this.set(obj)
+        })
     }
 
     private unBind(key: string, fnToUnbind: (value?: any) => void) {
@@ -121,26 +128,24 @@ export class ServerStore {
         this.ribInstance = ribInstance
     }
 
-    giveAccess(clients: any[]) {
+    giveAccess(client: any) {
         if (this.isPublicStore) {
             this.ribInstance._nameSpace.on(`RibStoreUpdate_${this.storeName}`, (obj: object) => {
                 this.set(obj)
             })
         } else {
-            for (let client of clients) {
-                if (client && client._ribSocketId) {
-                    let socketId = client._ribSocketId
-                    let socket = this.ribInstance._socketMap.get(socketId)
-                    if (socket) {
-                        this.availableSockets.set(socketId, socket)
-                        socket.on('disconnect', () => {
-                            this.availableSockets.delete(socketId)
-                        })
+            if (client && client._ribSocketId) {
+                let socketId = client._ribSocketId
+                let socket = this.ribInstance._socketMap.get(socketId)
+                if (socket) {
+                    this.availableSockets.set(socketId, socket)
+                    socket.on('disconnect', () => {
+                        this.availableSockets.delete(socketId)
+                    })
 
-                        socket.on(`RibStoreUpdate_${this.storeName}`, (obj: object) => {
-                            this.set(obj)
-                        })
-                    }
+                    socket.on(`RibStoreUpdate_${this.storeName}`, (obj: object) => {
+                        this.set(obj)
+                    })
                 }
             }
         }

@@ -130,8 +130,10 @@ export class ServerStore {
         this.ribInstance = ribInstance
 
         if (this.isPublicStore) {
-            this.ribInstance._nameSpace.on(`RibStoreRequest_${this.storeName}`, (socket: SocketIO.Socket) => {
-                socket.emit(`RibStore_${this.storeName}`, this.getFullObject())
+            this.ribInstance._nameSpace.on('connection', (socket) => {
+                socket.on(`RibStoreRequest_${this.storeName}`, () => {
+                    socket.emit(`RibStore_${this.storeName}`, this.getFullObject());
+                })
             })
         }
     }

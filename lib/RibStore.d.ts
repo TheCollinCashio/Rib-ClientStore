@@ -6,7 +6,7 @@ export declare class ClientStore {
     constructor(obj: object);
     set(obj: object, addFunc?: (value?: any) => void): () => void;
     get(obj: object): {};
-    bindToServerStore(ribInstance: RibClient, serverStoreName: string): void;
+    bindToServerStore(serverStoreName: string, ribInstance: RibClient): void;
     private unBind;
 }
 export declare class ServerStore {

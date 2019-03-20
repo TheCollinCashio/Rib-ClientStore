@@ -48,7 +48,7 @@ export class ClientStore {
         return returnObj
     }
 
-    bindToServerStore(ribInstance: RibClient, serverStoreName: string) {
+    bindToServerStore(serverStoreName: string, ribInstance: RibClient) {
         ribInstance._socket.on(`RibStore_${serverStoreName}`, (obj) => {
             this.set(obj)
         })
